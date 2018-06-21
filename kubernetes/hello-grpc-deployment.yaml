@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: hello-grpc-deployment
+  labels:
+    app: hello-grpc
+  namespace: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-grpc
+  template:
+    metadata:
+      labels:
+        app: hello-grpc
+    spec:
+      containers:
+      - image: cwsakamoto/hello-grpc:latest
+        imagePullPolicy: Always
+        name: hello-grpc
+        env:
+        - name: GRPC_PORT
+          value: "8999"
+        ports:
+        - name: grpc
+          containerPort: 8999

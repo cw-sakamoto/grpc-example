@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: goodbye-grpc-deployment
+  labels:
+    app: goodbye-grpc
+  namespace: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: goodbye-grpc
+  template:
+    metadata:
+      labels:
+        app: goodbye-grpc
+    spec:
+      containers:
+      - image: cwsakamoto/goodbye-grpc:latest
+        imagePullPolicy: Always
+        name: goodbye-grpc
+        env:
+        - name: GRPC_PORT
+          value: "8999"
+        ports:
+        - name: grpc
+          containerPort: 8999
