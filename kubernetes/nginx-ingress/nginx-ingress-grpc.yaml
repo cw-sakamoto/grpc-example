@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-grpc
+    nginx.ingress.kubernetes.io/grpc-backend: "true"
+  name: nginx-ingress-grpc
+spec:
+  rules:
+  - host: nginx-ingress-grpc.example.com
+    http:
+      paths:
+      - path: /helloworld.Hello
+        backend:
+          serviceName: hello-grpc
+          servicePort: 8999
+      - path: /helloworld.Goodbye
+        backend:
+          serviceName: goodbye-grpc
+          servicePort: 8999
