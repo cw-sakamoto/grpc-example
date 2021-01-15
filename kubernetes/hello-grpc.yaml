@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hello-grpc
+  name: hello-grpc
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8999
+    protocol: TCP
+    targetPort: 8999
+  selector:
+    app: hello-grpc
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: "hello-grpc"
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: hello-grpc.example.com
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:XXXXXX
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '10'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol-version: GRPC
+    alb.ingress.kubernetes.io/healthcheck-protocol-version: GRPC
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    # https://aws.amazon.com/jp/blogs/news/new-application-load-balancer-support-for-end-to-end-http-2-and-grpc/
+    alb.ingress.kubernetes.io/success-codes: '12'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: "hello-grpc"
+              servicePort: 8999
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-grpc-deployment
+  labels:
+    app: hello-grpc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-grpc
+  template:
+    metadata:
+      labels:
+        app: hello-grpc
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - image: cwsakamoto/hello-grpc:latest
+        name: hello-grpc
+        env:
+        - name: GRPC_PORT
+          value: "8999"
+        ports:
+        - name: grpc
+          containerPort: 8999

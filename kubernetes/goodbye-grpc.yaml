@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: goodbye-grpc
+  name: goodbye-grpc
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8999
+    protocol: TCP
+    targetPort: 8999
+  selector:
+    app: goodbye-grpc
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: "goodbye-grpc"
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: goodbye-grpc.example.com
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:XXXXX
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '10'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol-version: GRPC
+    alb.ingress.kubernetes.io/healthcheck-protocol-version: GRPC
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    # https://aws.amazon.com/jp/blogs/news/new-application-load-balancer-support-for-end-to-end-http-2-and-grpc/
+    alb.ingress.kubernetes.io/success-codes: '12'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: "goodbye-grpc"
+              servicePort: 8999
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goodbye-grpc-deployment
+  labels:
+    app: goodbye-grpc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: goodbye-grpc
+  template:
+    metadata:
+      labels:
+        app: goodbye-grpc
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - image: cwsakamoto/goodbye-grpc:latest
+        name: goodbye-grpc
+        env:
+        - name: GRPC_PORT
+          value: "8999"
+        ports:
+        - name: grpc
+          containerPort: 8999
